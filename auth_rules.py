@@ -12,18 +12,17 @@
 from ipviking_auth.forms import LoginForm, EmailForm
 import sys, os
 sys.path.append(os.getcwd()+'/ipviking-api-python')
-from constants import DEFAULT_CONFIG
 from wrapper import IPViking
 
 
-IPVIKING_CONFIG = DEFAULT_CONFIG
+IPVIKING_CONFIG = {'proxy':'beta.ipviking.com','apikey':'8292777557e8eb8bc169c2af29e87ac07d0f1ac4857048044402dbee06ba5cea'}
  
 IPV = IPViking(config = IPVIKING_CONFIG)
 
 # This is the method to call from outside the module
 
 def ipv_action(request, ip):
-    success, data = IPV.execute({'method':'ipq','ip':ip})
+    success, data = IPV.request({'method':'ipq','ip':ip})
     if not success:
         return None
 
