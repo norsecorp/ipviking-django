@@ -1,50 +1,88 @@
-DEMO: IPVIKING IN CLIENT AUTHENTICATION
+DEMO: IPVIKING AUTHENTICATION IN DJANGO APPS
 
-Implementing the IPViking Python API is simple. You'll need two things: the ipviking_auth plugin for Django (let's assume
-that you have that, since you're reading this), and the API itself, which can be found at http://github.com/norsecorp/ipviking-api-python
-Then follow the below instructions for a guide on installation.
+This is a sample authentication backend using IPVIKING threat awareness to provide realistic, configurable responses
+to clients based on detailed intelligence on their online activities. Installation is lightweight and easy, but if
+you have a need for more advanced configurations, this readme will give a rundown on the different pieces of the package.
 
-QUICK-AND-EASY-VERSION:
-1) Download the ipviking_auth and ipviking-api-python packages.
-2) Replace the path in line 14 of ipviking_auth.auth_rules with the path to your ipviking-api-python package.
-3) Replace DEFAULTCONFIG in ipviking_auth.auth_rules with {'apikey':<your API key>, 'proxy':<the appropriate proxy>}
-3) Choose the authentication rules you'd like to follow by modifying the IPVIKING_CHECKS variable (see below for help)
-4) Any view that you want protected, just have it inherit from ipviking_auth.views.BaseView
+This package is dependent on the ipviking_api_python package, also available on NorseCorp's github.
+
+QUICK INSTALL:
+1) Install the ipviking_api_python package using setup.py
+2) Install the ipviking_django package using setup.py
+3) Create your rules and responses (look at ipviking_django.examples.rules for some hints).
+4) Configure the authenticator in your settings.py module using ipviking_django.authorizer.configure
+	(again, there's an example in ipviking_django.examples.settings)
+5) To protect a view with IPViking, just have it inherit from ipviking_django.views.BaseView
+
+That's all, folks!
 
 
-THE IN-DEPTH VERSION:	
+SOURCE DIVE:
+This is an in-depth look at the source of this package, for developers with more specialized needs (and the confidence to
+hack the package around a bit). This package is pretty simple, but dependent on Django, so I'd recommend some familiarity 
+with the Django framework before you muck around with things.
 
-THE IPVIKING-API-PYTHON PACKAGE:
-This package handles the backend- building a request to our server and parsing the response. It returns a dictionary if there's valid 
-data, and a string if an error is raised. For a Django application, you shouldn't need to do much with this, but feel free to poke around!
+MODELS.PY
+Contains the ipvAuthorizer object, which handles authentication; the IPV_Rule object, which is a check on the data received
+from the API, and the IPV_Response object, which is a response-context builder used in the AuthView view.
 
-THE IPVIKING-AUTH PACKAGE
-This is the package you'll actually have to handle. First things first, do steps 2 and 3 from the quick and easy version. Your API key can be
-found under account details on https://ipviking.com/, and the proxies can be found under developers.
+	-ipvAuthorizer: The worker which handles validation. No arguments necessary for construction; configuration necessary.
+		-attributes:
+			apikey: your IPViking API key
+			proxy: the IPViking API proxy best suited to you
+			rules: A list of IPV_Rules
+			responses: A dict of response-level:IPV_Response pairs
+			authview: the view for authentication. Configure this to use a custom auth view.
+		-configure: helper function for setting attributes after the fact. Referenced by authorizer.configure
+		-setRule: helper function for setting a new IPV_Rule.
+		-setResponse: helper function for setting a new IPV_Response
+		-validate_request: the validator function. Takes a django HttpRequest and calls to the API, then runs it through the 
+			authorizer's checks and selects the proper response (note: the highest IPV_Rule response code is executed, so
+			construct your rules accordingly)
+			
+	-IPV_Rule: A class to handle a check on API data. Takes the following arguments to initialize:
+		-check (function that returns a boolean when run on the API data specified in fields)
+		-fields (list of field names. These allow you to navigate nested fields, by calling the field names sequentially)
+		-warning (string that details the reason for the response, if a client fails validation)
+		-response (int that maps to an IPV_Response object. Higher number correlates with stricter response, and the highest
+			number returned valid is the response that's executed)
+			
+	-IPV_Response: A class to construct a response context for the AuthView view. Takes the following arguments to initialize:
+		-state: a formattable string (eg "Example %s") for the template to render with the warning from the IPV_Rule.
+		-template: the template to render.
+		-response_context: addition context args (eg forms) to render.
+		
 
-We'll touch on custom authentication rules in a bit- first let's go over implementation. For convenience, the ipviking authentication is
-built into a custom BaseView class in views. This overwrites the View.as_view() and adds the authentication check. To use it, simply have
-your views inherit from BaseView. If you prefer method-based views, you can copy the code from lines 32-39 into the method and it should run.
-
-The ipv_auth module is where the work happens- this contains the call to ipviking-api-python and your responses to threat data. The general 
-structure of the module is as follows:
-
--IPVIKING_CHECKS: these are checks to be performed on the data called from the IPViking request- in short, your rules for determining 
-	who poses a danger. It's a list of 2-tuples; the first value of each tuple is the response type, the second is the boolean check.
-	As it's currently set up, the highest response code wins, so construct your checks and responses in a way such that a higher code 
-	merits a stricter response.
-
--IPVIKING_RESPONSES: this is a simple map of response code to methods.
-
--block, allow_access, require_login, etc- these are methods to build a response context, plus the former request and a template. They 
-	map to the response codes.
+VIEWS.PY
+Contains the BaseView that IPViking-protected pages will inherit and the AuthView which handles authentication.
 	
--ipv_action: This is the method to call from outside the module- pass it an IP address, it'll perform the check and return an appropriate
-	context. From there, you can simple pop out the template and use render_to_response- as you'll see in auth.views.AuthView
+	-BaseView: This is simply an overwrite of the as_view method which checks the session to see if the ipviking flag has been set,
+		and calls for authentication if not.
+		
+	-AuthView: This is a sample authentication view.
+		-get: renders the response template in the response context generated by the ipvAuthorizer with with appropriate context.
+		-post: validates the form results, if a form was generated. Note: this method MUST set the 'ipviking' flag for the session!
+			(otherwise, you'd be running validation every time any user wants to see a protected view. Bottleneck much?)
 	
-Finally, we have views.AuthView. This is simply a view that's called from the BaseView check, and it renders the data from the ipv_action
-method. It also sets the 'ipviking' value in the request.session field, so you're not stuck performing this check every time. It references
-forms set in forms.py, but that's pretty much straight out of the Django documentation.
+FORMS.PY
+Contains the forms for the example authview and IPV_Responses. You'll probably use your own if you're using a custom AuthView. It's
+pretty much textbook Django forms.
+
+AUTHORIZER.PY:
+This is the module where our master ipvAuthorizer lives. configure and validate are wrapper functions called from this module so that
+we can keep that one master copy of the ipvAuthorizer.
+
+	-IPV_AUTH is set up as a default version of the authorizer. Example rules, example responses, sandbox API key and proxy, sample
+		authview. Hence configure, so that you can, well, configure it.
+
+	-configure: Helper function to take any authview, rules, responses, config arguments and apply them to IPV_AUTH.
+	
+	-validate: Helper function to wrap the API call, IPV_AUTH's validation, and IPV_AUTH's authview. Pass it a request, it'll return
+		the response your rules and authview dictate. This level of abstraction is intentional, so that this single function can be
+		slotted into the BaseView with next to no mess.
+		
 
 
-That should be about all! Happy developing!
+EXAMPLE_SITE: This package just contains some examples of this implementation. They're not intended to be reasonable defaults, and while
+the outer modules reference them, it's only for initialization purposes for IPV_AUTH, and will likely be overwritten when you configure your app.
+		
