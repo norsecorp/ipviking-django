@@ -31,7 +31,7 @@ class BaseView(View):
                 ipv = request.session['ipviking']
             except:
                 ipv = None
-            if ipv is None:
+            if not ipv:
                 #they haven't been validated yet
                 response = validate(request)
                 if not response:

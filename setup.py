@@ -9,7 +9,7 @@ setup(
       author = 'Marcus Hoffman',
       url = 'https://github.com/norsecorp/ipviking-django',
       license = 'BSD',
-      packages = ['ipviking_django', 'example_site'],
+      packages = ['ipviking_django'],
       include_package_data = True,
       package_data = {'':['README.md']},
       install_requires = ['ipviking_api_python'],

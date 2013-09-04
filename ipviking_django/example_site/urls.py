@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, include, url
-from DjangoGoesToNorway.views import HomeView, NextView
-from ipviking_auth.views import AuthView
+from .views import HomeView, NextView
+from ipviking_django.views import AuthView
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
