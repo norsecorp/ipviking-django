@@ -11,10 +11,11 @@
 #===============================================================================
 
 from ipviking_django.forms import LoginForm, EmailForm
-from ipviking_django.models import IPV_Rule, IPV_Response, ValidResponse
+from ipviking_api_python.auth.objects import IPV_Rule, IPV_Response
 from ipviking_api_python.helpers.constants import SANDBOX_APIKEY, PROXIES
 
-EXAMPLE_CONFIG = {'apikey':SANDBOX_APIKEY, 'proxy':PROXIES['SANDBOX']}
+PROXY = PROXIES['SANDBOX']
+APIKEY = SANDBOX_APIKEY
 
 BLOCKED_COUNTRIES = ['Madagascar']
 WARN_COUNTRIES = ['United States']
@@ -32,6 +33,5 @@ block = IPV_Response(state = "Your host address has been blocked, due to %s.", t
 require_login = IPV_Response(state = "We'll need you to log in. Your host address has been flagged due to %s.", template = 'auth.html', response_context = {'form', LoginForm()})
 require_email = IPV_Response(state = "We'll need you to provide an email. Your host address has been flagged due to %s.", template = 'auth.html', response_context = {'form':EmailForm()})
 
-IPVIKING_RESPONSES = {0:ValidResponse,
-                      1:require_email,
+IPVIKING_RESPONSES = {1:require_email,
                       5:block}

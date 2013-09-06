@@ -1,4 +1,4 @@
-# Django settings for DjangoGoesToNorway project.
+# Django settings for sample project.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'C:\\Users\\Dev6\\Desktop\\DjangoGoesToNorway\\sqlite.db',                      # Or path to database file if using sqlite3.
+        'NAME': 'C:\\Users\\Dev6\\Desktop\\ipviking-django\\ipviking_django\\sqlite.db',                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': '',
         'PASSWORD': '',
@@ -69,7 +69,7 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    "C:/Users/Dev6/Desktop/DjangoGoesToNorway/DjangoGoesToNorway/static",
+    "C:/Users/Dev6/Desktop/ipviking-django/ipviking_django/ipviking_django/static",
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -103,13 +103,13 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'DjangoGoesToNorway.urls'
+ROOT_URLCONF = 'ipviking_django.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'DjangoGoesToNorway.wsgi.application'
+WSGI_APPLICATION = 'ipviking_django.wsgi.application'
 
 TEMPLATE_DIRS = (
-        'C:/Users/Dev6/Desktop/DjangoGoesToNorway/DjangoGoesToNorway/templates'
+        'C:/Users/Dev6/Desktop/ipviking-django/ipviking_django/ipviking_django/templates'
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -158,8 +158,8 @@ LOGGING = {
 }
 
 #set up IPViking Auth
-from ipviking_django.example_site.rules import EXAMPLE_CONFIG, IPVIKING_RULES, IPVIKING_RESPONSES
+from ipviking_django.rules import PROXY, APIKEY, IPVIKING_RULES, IPVIKING_RESPONSES
 from ipviking_django.authorizer import configure
-from ipviking_django.views import AuthView
-configure(AuthView, EXAMPLE_CONFIG, IPVIKING_RULES, IPVIKING_RESPONSES)
+from ipviking_django.views import AuthView, ValidResponse
+configure(apikey = APIKEY, proxy = PROXY, rules = IPVIKING_RULES, responses = IPVIKING_RESPONSES, authview = AuthView, validview = ValidResponse)
 

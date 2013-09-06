@@ -1,0 +1,11 @@
+*.pyc
+.idea/*
+.project
+.pydevproject
+dist/*
+ipviking_django.egg-info/*
+build/*
+Include/*
+Lib/*
+Scripts/*
+ipviking_django/sqlite.db

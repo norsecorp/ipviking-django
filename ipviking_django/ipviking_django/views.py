@@ -1,4 +1,3 @@
-# Create your views here.
 from django.views.generic import View
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render_to_response
@@ -6,6 +5,11 @@ from django.utils.decorators import classonlymethod
 from functools import update_wrapper
 from ipviking_django.forms import LoginForm, EmailForm
 from ipviking_django.authorizer import validate
+
+def ValidResponse(request, orig_path):
+    """The response called when the IPViking API fails or when a client passes all validation rules."""
+    response = HttpResponseRedirect(request.path)
+    return response
 
 class BaseView(View):
     """This is a base class designed to implement the IPViking check"""
@@ -27,17 +31,9 @@ class BaseView(View):
                                 "attributes of the class." % (cls.__name__, key))
 
         def view(request, *args, **kwargs):
-            try:
-                ipv = request.session['ipviking']
-            except:
-                ipv = None
-            if ipv is None:
-                #they haven't been validated yet
-                response = validate(request)
-                if not response:
-                    pass
-                else:
-                    return response
+            response = validate(request)
+            if response:
+                return response
             
             self = cls(**initkwargs)                
             if hasattr(self, 'get') and not hasattr(self, 'head'):
@@ -56,8 +52,12 @@ class BaseView(View):
         return view
 
 class AuthView(View):
-    def get(self, request, context):
-        template = context.pop('template')
+    def get(self, request, context={}):
+        try:
+            template = context.pop('template')
+        except KeyError:
+            template = 'auth.html'
+            context['form'] = LoginForm()
         return render_to_response(template, context)
 
         
@@ -71,7 +71,7 @@ class AuthView(View):
                 user = authenticate(username, password)
                 if user is not None:
                     login(user, request)
-                    request.session['ipviking'] = 0
+                    request.session['ipviking'] = 1
                     return render_to_response('home', {'request':request})
             form = LoginForm()
             state = "Invalid username/password."
@@ -81,7 +81,7 @@ class AuthView(View):
             form = EmailForm(request.POST)
             if form.is_valid():
                 request.session['email'] = email
-                request.session['ipviking'] = 0
+                request.session['ipviking'] = 1
                 return render_to_response('home.html', {})
             else:
                 form = EmailForm()
@@ -89,3 +89,17 @@ class AuthView(View):
                 return render_to_response('auth.html', {'form':form, 'state':state})
         else:
             return render_to_response('home.html', state = 'Invalid responses.')
+
+class HomeView(View):
+    def get(self, request):
+        return render_to_response('home.html', {})
+    def post(self, request):
+        return render_to_response('home.html')
+    
+class NextView(BaseView):
+    def get(self, request):
+        return render_to_response('next.html', {})
+        
+
+    
+    
