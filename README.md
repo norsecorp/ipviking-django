@@ -9,9 +9,9 @@ This package is dependent on the ipviking_api_python package, also available on 
 QUICK INSTALL:
 1) Install the ipviking_api_python package using setup.py
 2) Install the ipviking_django package using setup.py
-3) Create your rules and responses (look at ipviking_django.examples.rules for some hints).
+3) Create your rules and responses (look at ipviking_django.rules for some examples).
 4) Configure the authenticator in your settings.py module using ipviking_django.authorizer.configure
-	(again, there's an example in ipviking_django.examples.settings)
+	(again, there's an example in ipviking_django.settings)
 5) To protect a view with IPViking, just have it inherit from ipviking_django.views.BaseView
 
 That's all, folks!
@@ -21,40 +21,11 @@ SOURCE DIVE:
 This is an in-depth look at the source of this package, for developers with more specialized needs (and the confidence to
 hack the package around a bit). This package is pretty simple, but dependent on Django, so I'd recommend some familiarity 
 with the Django framework before you muck around with things.
-
-MODELS.PY
-Contains the ipvAuthorizer object, which handles authentication; the IPV_Rule object, which is a check on the data received
-from the API, and the IPV_Response object, which is a response-context builder used in the AuthView view.
-
-	-ipvAuthorizer: The worker which handles validation. No arguments necessary for construction; configuration necessary.
-		-attributes:
-			apikey: your IPViking API key
-			proxy: the IPViking API proxy best suited to you
-			rules: A list of IPV_Rules
-			responses: A dict of response-level:IPV_Response pairs
-			authview: the view for authentication. Configure this to use a custom auth view.
-		-configure: helper function for setting attributes after the fact. Referenced by authorizer.configure
-		-setRule: helper function for setting a new IPV_Rule.
-		-setResponse: helper function for setting a new IPV_Response
-		-validate_request: the validator function. Takes a django HttpRequest and calls to the API, then runs it through the 
-			authorizer's checks and selects the proper response (note: the highest IPV_Rule response code is executed, so
-			construct your rules accordingly)
-			
-	-IPV_Rule: A class to handle a check on API data. Takes the following arguments to initialize:
-		-check (function that returns a boolean when run on the API data specified in fields)
-		-fields (list of field names. These allow you to navigate nested fields, by calling the field names sequentially)
-		-warning (string that details the reason for the response, if a client fails validation)
-		-response (int that maps to an IPV_Response object. Higher number correlates with stricter response, and the highest
-			number returned valid is the response that's executed)
-			
-	-IPV_Response: A class to construct a response context for the AuthView view. Takes the following arguments to initialize:
-		-state: a formattable string (eg "Example %s") for the template to render with the warning from the IPV_Rule.
-		-template: the template to render.
-		-response_context: addition context args (eg forms) to render.
 		
 
 VIEWS.PY
-Contains the BaseView that IPViking-protected pages will inherit and the AuthView which handles authentication.
+Contains the BaseView that IPViking-protected pages will inherit and the AuthView which handles authentication. The important ones
+are below; everything else is pretty simple.
 	
 	-BaseView: This is simply an overwrite of the as_view method which checks the session to see if the ipviking flag has been set,
 		and calls for authentication if not.
@@ -82,7 +53,5 @@ we can keep that one master copy of the ipvAuthorizer.
 		slotted into the BaseView with next to no mess.
 		
 
-
-EXAMPLE_SITE: This package just contains some examples of this implementation. They're not intended to be reasonable defaults, and while
-the outer modules reference them, it's only for initialization purposes for IPV_AUTH, and will likely be overwritten when you configure your app.
-		
+Everything else in the installation is pretty much standard Django, fresh from django-admin. So you can see, it's pretty simple to get
+set up!
